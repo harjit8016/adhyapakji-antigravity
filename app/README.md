@@ -1,50 +1,72 @@
-# Welcome to your Expo app 👋
+# ਅਧਿਆਪਕ ਜੀ (Adyapak Ji) — Mobile App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A unified mobile school management app for small Punjabi-medium schools, bridging communication between **Teachers** and **Parents** with multilingual support (English, Hindi, Punjabi).
 
-## Get started
+## Tech Stack
 
-1. Install dependencies
+| Layer | Technology |
+|-------|-----------|
+| Mobile | React Native + Expo (managed workflow) |
+| Navigation | `@react-navigation/native` |
+| Database & Auth | Supabase (PostgreSQL + Auth + Storage) |
+| Backend | Python FastAPI (Cloud Run) |
+| Localization | `i18n-js` (EN / HI / PA) |
+| Audio | `expo-av` |
+| Icons | `lucide-react-native` |
 
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Getting Started
 
 ```bash
-npm run reset-project
+# Install dependencies
+cd app
+npm install
+
+# Start Expo dev server
+npm run start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Use the **Expo Go** app on your phone, or press `i` for iOS Simulator / `a` for Android emulator.
 
-## Learn more
+## Project Structure
 
-To learn more about developing your project with Expo, look at the following resources:
+```
+adyapak-ji-production/
+├── app/                        # Expo React Native app
+│   ├── src/
+│   │   ├── components/         # Reusable UI (ClassSelector)
+│   │   ├── constants/theme.ts  # Design tokens (colors, typography, spacing)
+│   │   ├── context/            # Auth, Language, MockData providers
+│   │   ├── lib/supabase.ts     # Supabase client
+│   │   ├── navigation/         # React Navigation setup
+│   │   ├── screens/            # Auth, Teacher, Parent screens
+│   │   └── types.ts            # TypeScript interfaces
+│   ├── supabase/schema.sql     # Database schema
+│   └── App.tsx                 # Entry point
+├── backend/                    # Python FastAPI microservice
+│   ├── app/main.py
+│   ├── Dockerfile
+│   └── requirements.txt
+└── app_concept.md              # Product blueprint (read before coding!)
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Setup Supabase
 
-## Join the community
+1. Create a Supabase project at [supabase.com](https://supabase.com)
+2. Execute `app/supabase/schema.sql` in the SQL editor
+3. Copy your **URL** and **anon key** from Settings → API into `app/.env`:
+   ```
+   EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+   EXPO_PUBLIC_SUPABASE_ANON_KEY=eyJ...your-anon-key
+   ```
 
-Join our community of developers creating universal apps.
+## Deploy Backend
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+The Python backend is Dockerized for Google Cloud Run:
+```bash
+cd backend
+gcloud run deploy adyapak-ji-api --source .
+```
+
+## Concept Document
+
+See [`app_concept.md`](../app_concept.md) for the full product vision, roles, screens, and current state.

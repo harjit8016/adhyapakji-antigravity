@@ -1,16 +1,55 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, TextInput, StyleSheet, ScrollView } from 'react-native';
+import { View, TextInput, StyleSheet, ScrollView, Platform, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Plus, User } from 'lucide-react-native';
 import { useLang } from '../../context/LanguageContext';
-import { useMockApp } from '../../context/MockAppContext';
+import { useAppStore } from '../../store/appStore';
 import { COLORS, TYPOGRAPHY, SPACING, RADIUS } from '../../constants/theme';
+import type { ChildStudent } from '../../types';
+import ScreenWrapper from '../../components/ScreenWrapper';
+import AppText from '../../components/AppText';
+import AppCard from '../../components/AppCard';
+import AppButton from '../../components/AppButton';
 
 export default function StudentSelection() {
     const { t } = useLang();
     const navigation = useNavigation<any>();
-    const { myChildren, setActiveStudentId } = useMockApp();
+    const myChildren = useAppStore(state => state.myChildren);
+    const setActiveStudentId = useAppStore(state => state.setActiveStudentId);
+
     const [showAddForm, setShowAddForm] = useState(false);
+    const [loginId, setLoginId] = useState('');
+    const [password, setPassword] = useState('');
+    const { setMyChildren } = useAppStore();
+
+    const handleLinkChild = () => {
+        if (!loginId || !password) {
+            const errorMsg = t('fill_required_fields') || "Please enter both Login ID and Password";
+            if (Platform.OS === 'web') window.alert(errorMsg);
+            else Alert.alert('Error', errorMsg);
+            return;
+        }
+
+        if (loginId.toUpperCase() === 'STD201' && password === 'pass123') {
+            const newChild: ChildStudent = {
+                id: '201',
+                classId: 'c2',
+                name: 'Simran Kaur',
+                className: 'Class 2B',
+                roll: '1'
+            };
+            if (!myChildren.find(c => c.id === '201')) {
+                setMyChildren([...myChildren, newChild]);
+            }
+            setShowAddForm(false);
+            setLoginId('');
+            setPassword('');
+        } else {
+            const errorMsg = t('invalid_credentials') || "Invalid Student Login ID or Password";
+            if (Platform.OS === 'web') window.alert(errorMsg);
+            else Alert.alert('Error', errorMsg);
+        }
+    };
 
     const handleSelect = (id: string) => {
         setActiveStudentId(id);
@@ -18,45 +57,62 @@ export default function StudentSelection() {
     };
 
     return (
-        <ScrollView style={styles.container}>
-            <Text style={styles.title}>{t('select_student')}</Text>
+        <ScreenWrapper>
+            <ScrollView style={styles.container}>
+                <AppText variant="h1" align="center" style={styles.title}>
+                    {t('select_student')}
+                </AppText>
 
-            {myChildren.map((child: any) => (
-                <TouchableOpacity
-                    key={child.id}
-                    style={styles.card}
-                    onPress={() => handleSelect(child.id)}
-                >
-                    <View style={styles.avatar}>
-                        <User size={32} color={COLORS.textMuted} />
-                    </View>
-                    <View>
-                        <Text style={styles.childName}>{child.name}</Text>
-                        <Text style={styles.childClass}>{child.className}</Text>
-                    </View>
-                </TouchableOpacity>
-            ))}
+                {myChildren.map((child: ChildStudent) => (
+                    <AppCard
+                        key={child.id}
+                        style={styles.card}
+                    >
+                        <View onTouchEnd={() => handleSelect(child.id)} style={{ flexDirection: 'row', alignItems: 'center', flex: 1, gap: SPACING.lg }}>
+                            <View style={styles.avatar}>
+                                <User size={32} color={COLORS.textMuted} />
+                            </View>
+                            <View>
+                                <AppText variant="h1">{child.name}</AppText>
+                                <AppText variant="h2" color={COLORS.textMuted}>{child.className}</AppText>
+                            </View>
+                        </View>
+                    </AppCard>
+                ))}
 
-            {showAddForm ? (
-                <View style={styles.formCard}>
-                    <TextInput
-                        style={styles.input}
-                        placeholder={t('student_id')}
+                {showAddForm ? (
+                    <AppCard style={styles.formCard}>
+                        <AppText weight="bold" style={styles.label}>{t('student_login_id') || 'Student Login ID'}</AppText>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="e.g. STD201"
+                            value={loginId}
+                            onChangeText={setLoginId}
+                            autoCapitalize="characters"
+                        />
+
+                        <AppText weight="bold" style={styles.label}>{t('password') || 'Password'}</AppText>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="••••••"
+                            value={password}
+                            onChangeText={setPassword}
+                            secureTextEntry
+                        />
+                        <AppButton title={t('link_child')} onPress={handleLinkChild} />
+                        <AppButton title={t('cancel')} variant="ghost" onPress={() => setShowAddForm(false)} style={{ marginTop: SPACING.sm }} />
+                    </AppCard>
+                ) : (
+                    <AppButton
+                        title={t('add_child')}
+                        variant="outline"
+                        onPress={() => setShowAddForm(true)}
+                        icon={<Plus size={24} color={COLORS.primary} />}
+                        style={{ marginTop: SPACING.md }}
                     />
-                    <TouchableOpacity style={styles.btnPrimary}>
-                        <Text style={styles.btnText}>{t('link_child')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.btnOutline} onPress={() => setShowAddForm(false)}>
-                        <Text style={styles.btnOutlineText}>{t('cancel')}</Text>
-                    </TouchableOpacity>
-                </View>
-            ) : (
-                <TouchableOpacity style={styles.btnOutline} onPress={() => setShowAddForm(true)}>
-                    <Plus size={24} color={COLORS.primary} />
-                    <Text style={styles.btnOutlineText}>{t('add_child')}</Text>
-                </TouchableOpacity>
-            )}
-        </ScrollView>
+                )}
+            </ScrollView>
+        </ScreenWrapper>
     );
 }
 
@@ -67,25 +123,10 @@ const styles = StyleSheet.create({
         padding: SPACING.lg,
     },
     title: {
-        fontSize: TYPOGRAPHY.h1,
-        fontWeight: 'bold',
-        color: COLORS.textDark,
-        textAlign: 'center',
         marginBottom: SPACING.xl,
     },
     card: {
-        backgroundColor: COLORS.cardBg,
-        padding: SPACING.lg,
-        borderRadius: RADIUS.lg,
         marginBottom: SPACING.md,
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: SPACING.lg,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
     },
     avatar: {
         width: 64,
@@ -95,22 +136,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    childName: {
-        fontSize: TYPOGRAPHY.h1,
-        fontWeight: 'bold',
-        color: COLORS.textDark,
-    },
-    childClass: {
-        fontSize: TYPOGRAPHY.h2,
-        color: COLORS.textMuted,
-        marginTop: 4,
-    },
     formCard: {
-        backgroundColor: COLORS.cardBg,
-        padding: SPACING.lg,
-        borderRadius: RADIUS.lg,
         marginTop: SPACING.md,
-        elevation: 2,
     },
     input: {
         borderWidth: 1,
@@ -120,32 +147,16 @@ const styles = StyleSheet.create({
         fontSize: TYPOGRAPHY.body,
         marginBottom: SPACING.md,
     },
-    btnPrimary: {
-        backgroundColor: COLORS.primary,
-        padding: SPACING.lg,
-        borderRadius: RADIUS.md,
-        alignItems: 'center',
+    label: {
         marginBottom: SPACING.sm,
     },
-    btnText: {
-        color: COLORS.textLight,
-        fontSize: TYPOGRAPHY.h2,
-        fontWeight: 'bold',
+    classScroll: {
+        marginBottom: SPACING.md,
     },
-    btnOutline: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 8,
-        borderWidth: 2,
-        borderColor: COLORS.primary,
-        padding: SPACING.lg,
-        borderRadius: RADIUS.md,
-        marginTop: SPACING.md,
-    },
-    btnOutlineText: {
-        color: COLORS.primary,
-        fontSize: TYPOGRAPHY.h2,
-        fontWeight: 'bold',
+    classChip: {
+        marginRight: 8,
+        minHeight: 0,
+        paddingVertical: 8,
+        paddingHorizontal: 16,
     },
 });
